@@ -1,0 +1,16 @@
+---
+# Storage bucket parameters
+region: "uk-london-1"
+bucket_name: "bucket_name"
+namespace_name: "namespace_name"
+fss_mount_point: "/oss"
+
+# Destination compartment OCID
+dest_compartment_ocid: "ocid1.compartment.oc1..aaaaaaaaxxx"
+
+##Notification parameters
+topic_ocid: "ocid1.onstopic.oc1.uk-london-1.aaaaaaaaxxx"
+
+## Temporary Backup Store Area
+local_backup_location: "/u01/OCI-Cyber-scripts/backup"
+err_logs: "./err_logs"

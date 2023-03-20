@@ -1,0 +1,34 @@
+---
+- name: rclone Source and distination bucket
+  block:
+
+    - name: Syncing Source bucket with Destination bucket
+      command: >
+        rclone
+        sync
+        --progress
+        "{{ rclone_local }}:{{ source_bucket }}"
+        "{{ rclone_remote }}:{{ destination_bucket }}"
+        --filter-from="{{ role_path }}"/files/rclone_db_filter
+
+    - name: Updating log file with DS status
+      shell: 'echo "PASS" > {{ err_logs }}/{{ item }}_{{ ansible_date_time.date }}.log'
+      with_items:
+        - "db_rclone"
+
+  rescue:
+    - name: DB backup Rclone failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: DB Rclone sync from {{ rclone_local }}:{{ source_bucket }} to {{ rclone_remote }}:{{ destination_bucket }}"
+        body: "DB Rclone sync failed from {{ rclone_local }}:{{ source_bucket }} to {{ rclone_remote }}:{{ destination_bucket }} as on date: {{ ansible_date_time.date }}"
+
+    - name: Updating log file with DS status
+      shell: 'echo "FAIL" > {{ err_logs }}/{{ item }}_{{ ansible_date_time.date }}.log'
+      with_items:
+        - "db_rclone"
+        - "db_avscan"
+    
+    - name: Aborting playbook due to DB Rclone sync failure
+      meta: "end_play"

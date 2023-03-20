@@ -1,0 +1,115 @@
+---
+# tasks file for oci-restore-database
+
+  - name: Drop & Restore Database
+    command: sh {{ restore_script_location }}
+    # ignore_errors: true
+    async: 86400 # Maximum allowed time in Seconds
+    poll: 600 # Polling Interval in Seconds
+    register: import_db
+
+  - name: Check if database import is complete
+    async_status:
+      jid: "{{ import_db.ansible_job_id }}"
+    register: job_result
+    until: job_result.finished
+    delay: 600
+    retries: 300
+
+  - name: Run validation script if restore is successful
+    command: sh {{ validation_script_location  }}
+    ignore_errors: true
+
+  - name: Get content of validation script output 
+    command: cat {{ validation_output_location }}
+    ignore_errors: true
+    register: validation_output
+
+  - name: Extract PDBS
+    command: grep pdb {{ validation_output_location }}
+    register: pdb_list
+    ignore_errors: true
+
+  - name: Extract db_name
+    command: grep DB_Name {{ validation_output_location }}
+    register: db_name_list
+    ignore_errors: true
+
+  - name: Extract sysdate
+    command: grep Sysdate {{ validation_output_location }}
+    register: sysdate_list
+    ignore_errors: true
+
+  - name: Extract open_mode
+    command: grep Open_Mode {{ validation_output_location }}
+    register: open_mode_list
+    ignore_errors: true
+
+  - name: Extract status
+    command: egrep '^Status:' {{ validation_output_location }}
+    register: status_list
+    ignore_errors: true
+
+  - name: Extract current_scn
+    command: grep Current_scn {{ validation_output_location }}
+    register: current_scn_list
+    ignore_errors: true
+
+  - name: Extract database_status
+    command: grep Database_Status {{ validation_output_location }}
+    register: database_status_list
+    ignore_errors: true
+
+  - name: Extract logins
+    command: grep Logins {{ validation_output_location }}
+    register: logins_list
+    ignore_errors: true
+
+  - name: Extract Distinct_Datafile_Status
+    command: grep Distinct_Datafile_Status {{ validation_output_location }}
+    register: Distinct_Datafile_Status_list
+    ignore_errors: true
+
+  - name: Extract Distinct_Tablespaces_Status
+    command: grep Distinct_Tablespaces_Status {{ validation_output_location }}
+    register: Distinct_Tablespaces_Status_list
+    ignore_errors: true
+
+  - name: Extract Distinct_Tempfiles_Status
+    command: grep Distinct_Tempfiles_Status {{ validation_output_location }}
+    register: Distinct_Tempfiles_Status_list
+    ignore_errors: true
+
+  - name: Extract Distinct_Datafiles_status
+    command: grep Distinct_Datafiles_status {{ validation_output_location }}
+    register: Distinct_Datafiles_status_list
+    ignore_errors: true
+
+  - name: Extract recover_files
+    command: grep Recover_Files {{ validation_output_location }}
+    register: recover_files_list
+    ignore_errors: true
+
+  - name: Run notification
+    delegate_to: 'localhost'
+    oci_ons_publish_result:
+      auth_type: "instance_principal"
+      topic_id: "{{ topic_ocid }}"
+      title: "Output of validation script on {{ inventory_hostname }}"
+      body: |
+        - Validation script has been executed on {{ inventory_hostname }}
+        - {{ db_name_list.stdout_lines }}
+        - {{ sysdate_list.stdout_lines }}
+        - {{ pdb_list.stdout_lines }}
+        - {{ open_mode_list.stdout_lines }}
+        - {{ status_list.stdout_lines }}
+        - {{ current_scn_list.stdout_lines }}
+        - {{ database_status_list.stdout_lines }}
+        - {{ logins_list.stdout_lines }}
+        - {{ Distinct_Datafile_Status_list.stdout_lines }}
+        - {{ Distinct_Tablespaces_Status_list.stdout_lines }}
+        - {{ Distinct_Tempfiles_Status_list.stdout_lines }}
+        - {{ Distinct_Datafiles_status_list.stdout_lines }}
+        - {{ recover_files_list.stdout_lines }}
+
+

@@ -1,0 +1,42 @@
+---
+- name: Start Database Node
+  connection: local
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-start-database-node
+
+# In red room, if there was no remediation in blue room, we just pull all the backup parts from blue room bucket
+- name: Syncing Remote Bucket & Mounting s3fs mount point
+  connection: local
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-pull-dbbackup
+    - role: oci-verifydb-antivirus
+
+- name: Restore, validate & notify
+  hosts: cyber_database
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  pre_tasks:
+    - name: wait_for_connection
+      wait_for_connection:
+        delay: 5
+        timeout: 600
+  roles:
+    - role: oci-restore-database
+
+- name: Stop Database Node
+  connection: local
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-stop-database-node

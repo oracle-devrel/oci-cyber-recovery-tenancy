@@ -1,0 +1,9 @@
+---
+- name: Syncing Remote Bucket
+  connection: local
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-pull-dbbackup
