@@ -1,0 +1,24 @@
+---
+- name: Clean up Backlog
+  block:
+    - name: Cleanup Custome Image created
+      delegate_to: 'localhost'
+      oci_compute_image:
+        image_id: "{{ image_result.image.id }}"
+        state: "absent"
+      register: image_cleanup_result
+
+    - name: Cleanup Temporary Instance created
+      delegate_to: 'localhost'
+      oci_compute_instance:
+        instance_id: "{{ instance_detail.instance.id }}"
+        state: "absent"
+        preserve_boot_volume: "false"
+      register: instance_cleanup_result
+  rescue:
+    - name: Generating Alert for Backlog cleanup failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Cleanup for {{ inventory_hostname }}"
+        body: "Cleanup failed for host {{ inventory_hostname }} as on date: {{ ansible_date_time.date }}"

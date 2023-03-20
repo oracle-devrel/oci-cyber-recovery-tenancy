@@ -1,0 +1,35 @@
+---
+- name: Generating Digital Signature SHA256
+  block:
+    - name: Recursively find oss
+      ansible.builtin.find:
+        paths: "{{ fss_mount_point }}"
+        patterns: "^.*$"
+        use_regex: 'yes'
+      register: "objectfile"
+
+    - debug:
+        msg: "{{ item.path }}"
+      with_items: "{{ objectfile.files }}"
+
+    - name: Generating digital signature volume backup
+      when: "'sha256' not in item.path.split('.')|last" 
+      command: >
+        openssl
+        dgst
+        -sha256
+        -sign "{{ private_k_file }}"
+        -out "{{ item.path }}.sha256"
+        "{{item.path }}"
+      args:
+        creates: "{{ item.path }}.sha256"
+      register: digi_cert
+      with_items: "{{ objectfile.files }}"
+
+  rescue:
+    - name: Generating Alert for Digital Signature Failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Digital Signature"
+        body: "Digital Signature failed as on date: {{ ansible_date_time.date }}"
