@@ -1,0 +1,24 @@
+---
+# tasks file for oci-launche-instance
+- name: Launching temporay instance
+  block:
+    - name: Launch instance from boot volume clone
+      delegate_to: 'localhost'
+      oci_compute_instance:
+        name: "{{ boot_vol_result.boot_volume.display_name }}"
+        compartment_id: "{{ dest_compartment_ocid }}"
+        shape: "{{ shape }}"
+        availability_domain: "{{ boot_vol_result.boot_volume.availability_domain }}"
+        subnet_id: "{{ dest_subnet_ocid }}"
+        source_details:
+          source_type: "bootVolume"
+          boot_volume_id: "{{ boot_vol_result.boot_volume.id }}"
+      register: instance_detail
+  rescue:
+    - name: Generating Alert message for Instance Launch Failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Instance Launch for {{ inventory_hostname }}"
+        body: "Instance Launch failed for host {{ inventory_hostname }} as on date: {{ ansible_date_time.date }}"
+    

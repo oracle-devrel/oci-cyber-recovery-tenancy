@@ -1,0 +1,45 @@
+---
+- name: Creating and Exporting Custom Image
+  block:
+    - name: Creating Custom image
+      delegate_to: 'localhost'
+      oci_compute_image:
+        display_name: "{{ instance_detail.instance.display_name }}"
+        compartment_id: "{{ dest_compartment_ocid }}"
+        instance_id: "{{ instance_detail.instance.id }}"
+        launch_mode: "NATIVE"
+      register: image_result
+      until: 'image_result is not failed'
+      retries: "600"
+      delay: "10"
+
+    - name: Sleep for 15 Seconds
+      ansible.builtin.wait_for:
+        timeout: 15
+
+    - name: Exporting image to object storage bucket
+      delegate_to: 'localhost'
+      oci_compute_image_actions:
+        image_id: "{{ image_result.image.id }}"
+        destination_type: "objectStorageTuple"
+        bucket_name: "{{ bucket_name }}"
+        namespace_name: "{{ namespace_name }}"
+        object_name: "{{ image_result.image.display_name }}"
+        action: "export"
+#        export_format: "VHD"
+      register: export_image
+      changed_when: 'export_image.image.lifecycle_state == "AVAILABLE"'
+      until: 'export_image is not failed'
+      retries: "600"
+      delay: "10"
+
+    - name: printing status
+      debug:
+        msg: "{{ export_image }}"
+  rescue:
+    - name: Generating Alert for Custom Image Failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Custom Image for {{ inventory_hostname }}"
+        body: "Custom Image failed for host {{ inventory_hostname }} as on date: {{ ansible_date_time.date }}"

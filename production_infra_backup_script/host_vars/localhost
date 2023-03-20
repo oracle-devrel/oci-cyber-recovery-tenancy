@@ -1,0 +1,15 @@
+---
+#Main bucket parameters
+
+region: "Region_eu-zurich-1"
+access_id: "token_access_id"
+secret_id: "token_secret_id"
+fss_mount_point: "mount_point_dir"
+namespace_name: "object_storage_namespace"
+bucket_name: "bucket_name"
+private_key: "privkey_file_name"
+
+##Resource Manager Parameters
+region_key: "ZRH"		#use LHR for London Region
+terraform_version: "1.1.x"
+compartment_ocid: "compartment_ocid_of_stack"

@@ -1,0 +1,21 @@
+---
+# tasks file for oci-clone-boot-volume
+- name: Creating boot volume
+  block:
+    - name: Clone boot volume
+      delegate_to: 'localhost'
+      oci_blockstorage_boot_volume:
+        name: "{{ inventory_hostname }}_image_{{ ansible_date_time.date }}"
+        source_details:
+          id: "{{ boot_ocid }}"
+          type: "bootVolume"
+        compartment_id: "{{ dest_compartment_ocid }}"
+      register: boot_vol_result
+
+  rescue:
+    - name: Create publish_result
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Clone for {{ inventory_hostname }}"
+        body: "Cloning failed for host {{ inventory_hostname }} as on date: {{ ansible_date_time.date }}"

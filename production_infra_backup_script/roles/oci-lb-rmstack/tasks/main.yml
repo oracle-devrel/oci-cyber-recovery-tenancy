@@ -1,0 +1,32 @@
+---
+# tasks file for oci-lb-rmstack
+- name: Create lb  stack
+  oci_resource_manager_stack:
+    compartment_id: "{{ compartment_ocid }}"
+    config_source:
+      config_source_type: "COMPARTMENT_CONFIG_SOURCE"
+      compartment_id: "{{ compartment_ocid }}"
+      region: "{{ region_key }}"
+      services_to_discover: "load_balancer"
+    display_name: "lb_stack_{{ ansible_date_time.date }}"
+    description: "LB Stack"
+    terraform_version: "{{ terraform_version }}"
+    wait: "yes"
+    wait_timeout: "1200"
+  register: lb_stack_result
+
+- debug:
+    msg: "{{ lb_stack_result }}"
+
+- name: Get a specific lb stack_tf_config
+  when: lb_stack_result is defined
+  oci_resource_manager_stack_tf_config_facts:
+    dest: "{{ fss_mount_point }}/lb_tf_{{ ansible_date_time.date }}.zip"
+    stack_id: "{{ lb_stack_result.stack.id }}"
+  register: lb_tf_status
+
+- name: Delete lb stack
+  when: lb_stack_result is defined
+  oci_resource_manager_stack:
+    stack_id: "{{ lb_stack_result.stack.id }}"
+    state: absent

@@ -1,0 +1,22 @@
+---
+- name: Cloning Boot Volume Playbook
+  connection: local
+  hosts: prod_host
+  vars: 
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-clone-bootvolume
+    - role: oci-launch-instance
+    - role: oci-custom-image
+    - role: oci-backlog-cleanup
+
+- name: Mount FSS and Digital Signature
+  connection: local
+  hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-mount-fuse
+    - role: oci-clamdb-copy
+    - role: oci-lb-rmstack
+    - role: oci-digital-signature

@@ -1,0 +1,40 @@
+---
+- name: Mounting S3fs mount point on Orch Server
+  block:
+    - name: copy OCI credentail to passwd-s3fs file
+      delegate_to: "localhost"
+      template:
+        src="passwd-s3fs.j2"
+        dest="{{ansible_facts['env']['HOME']}}/.passwd-s3fs"
+        owner="{{ansible_facts['user_id']}}"
+        group="{{ansible_facts['user_id']}}"
+        mode="0600"
+
+    - name: See if {{ s3fs_fuse_mount_point }} Is Already Mounted
+      delegate_to: "localhost"
+      command: mount
+      register: mount_list
+
+    - name: mount folder {{ s3fs_fuse_mount_point }} to s3 bucket {{ s3fs_fuse_bucket }} using s3fs
+      delegate_to: "localhost"
+      command: >
+        s3fs
+        -o endpoint={{ s3fs_fuse_region }}
+        -o passwd_file="{{ansible_facts['env']['HOME']}}/.passwd-s3fs"	
+        -o url={{ s3fs_fuse_url }}
+        {% for option in s3fs_fuse_option_flags %}
+        -o {{ option }}
+        {% endfor %}
+        {{ s3fs_fuse_bucket }} {{ s3fs_fuse_mount_point }}
+      register: command_result
+      failed_when: >
+        'according to mtab, s3fs is already mounted' not in command_result.stderr and command_result.rc == 1
+      when: s3fs_fuse_mount_point not in mount_list.stdout
+  
+  rescue:
+    - name: Genrating Alert if S3fs mount failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: S3fs mount on {{ inventory_hostname }}"
+        body: "S3fs mount failed on host {{ inventory_hostname }} as on date: {{ ansible_date_time.date }}"

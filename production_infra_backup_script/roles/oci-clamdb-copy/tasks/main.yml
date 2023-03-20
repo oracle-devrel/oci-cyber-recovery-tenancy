@@ -1,0 +1,19 @@
+---
+- name: Copy clamav database to object storage
+  block:
+    - name: Copy clamav db files
+      delegate_to: 'localhost'
+      copy:
+        src: "/var/lib/clamav/{{ item }}"
+        dest: "{{ fss_mount_point }}/{{ item }}.{{ ansible_date_time.date }}"
+      register: clamav_copy_result
+      with_items:
+        - 'daily.cld'
+        - 'main.cvd'
+  rescue:
+    - name: Generating Alert for clamav db copy failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: clamav db copy failed on Orchestration Server"
+        body: "Clamav db copy on orchestration server failed  as on date: {{ ansible_date_time.date }}"

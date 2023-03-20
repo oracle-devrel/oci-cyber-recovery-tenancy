@@ -1,0 +1,10 @@
+---
+bucket_name: "production_backup_bucket_name"
+namespace_name: "object_storage_namespace"
+compartment_ocid: "instance_compartment_ocid"
+dest_compartment_ocid: "destination_compartment_ocid_where_temporary_instance_created"
+dest_subnet_ocid: "destination_subnet_ocid"
+shape: "Temprory_VM_shape"
+orch_server_ocid: "orchestration_vm_ocid"
+topic_ocid: "topic_ocid"
+fss_mount_point: "mount_point_where_objectstrage_mount eg /oss"
