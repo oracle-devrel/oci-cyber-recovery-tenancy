@@ -1,0 +1,5 @@
+---
+ansible_ssh_host="x.x.x.x"
+restore_script_location="/u01/OCI-Cyber-scripts/DB-Restore/soa_restore.sh"
+validation_script_location="/u01/OCI-Cyber-scripts/DB-Restore/validation_soa.sh"
+validation_output_location="/u01/OCI-Cyber-scripts/DB-Restore/validation_soa.out"

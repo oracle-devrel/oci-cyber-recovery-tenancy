@@ -1,0 +1,17 @@
+---
+- name: Perform action start on db_node
+  delegate_to: localhost
+  oci_database_db_node_actions:
+    auth_type: "instance_principal"
+    db_node_id: "{{ database_ocid }}"
+    action: start
+
+- name: Run Notification
+  delegate_to: localhost
+  oci_ons_publish_result:
+    auth_type: "instance_principal"
+    topic_id: "{{ topic_ocid }}"
+    title: "Database has been started"
+    body: |
+      - The following database has been started: 
+      - {{ database_ocid }}
