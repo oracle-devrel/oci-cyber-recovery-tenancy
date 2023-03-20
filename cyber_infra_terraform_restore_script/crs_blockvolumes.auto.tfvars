@@ -1,0 +1,46 @@
+blockvolumes = {
+  instance_name-BVname = {
+    availability_domain                 = 2
+    compartment_id                      = "Compartment-Name"
+    display_name                        = "instance_name-BVname"
+    size_in_gbs                         = 100
+    is_auto_tune_enabled                = null
+    vpus_per_gb                         = null
+    kms_key_id                          = null
+    attach_to_instance                  = ""
+    attachment_type                     = ""
+    backup_policy                       = ""
+    policy_compartment_id               = ""
+    device                              = null
+    encryption_in_transit_type          = null
+    attachment_display_name             = null
+    is_read_only                        = null
+    is_pv_encryption_in_transit_enabled = null
+    is_shareable                        = null
+    use_chap                            = null
+    defined_tags                        = {}
+    freeform_tags                       = {}
+  },
+  instance_name-BVName = {
+    availability_domain                 = 2
+    compartment_id                      = "Compartment-Name"
+    display_name                        = "instance_name-bvname"
+    size_in_gbs                         = 50
+    is_auto_tune_enabled                = null
+    vpus_per_gb                         = null
+    kms_key_id                          = null
+    attach_to_instance                  = ""
+    attachment_type                     = ""
+    backup_policy                       = ""
+    policy_compartment_id               = ""
+    device                              = null
+    encryption_in_transit_type          = null
+    attachment_display_name             = null
+    is_read_only                        = null
+    is_pv_encryption_in_transit_enabled = null
+    is_shareable                        = null
+    use_chap                            = null
+    defined_tags                        = {}
+    freeform_tags                       = {}
+  },
+}
