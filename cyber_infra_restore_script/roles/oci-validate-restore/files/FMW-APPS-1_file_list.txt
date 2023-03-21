@@ -1,0 +1,5 @@
+/home/apps/ora_fin/prod/GFINSAAS/SOABPEL/GSE/ariba_itk
+/home/apps/ora_fin/prod/GFINSAAS/SOABPEL/GSE/ariba_itk/inbound
+/home/apps/ora_fin/prod/GFINSAAS/SOABPEL/GSE/ariba_itk/outbound
+/home/apps/ora_fin/prod/GFINSAAS/SOABPEL/GSE/ariba_itk/scripts/gse_db_connect_wrapper.sh
+/home/apps/ora_fin/prod/GFINSAAS/SOABPEL/GSE/ariba_itk/config/properties/archive.properties

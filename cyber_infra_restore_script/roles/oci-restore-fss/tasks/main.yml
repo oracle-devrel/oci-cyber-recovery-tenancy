@@ -1,0 +1,57 @@
+---
+# tasks file for oci-restore-fss
+- name: Restoring FSS data
+  block:
+    - name: Creating mount point directory
+      delegate_to: "localhost"
+      when: fss_mount is defined
+      file:
+        path: "{{ item.mount_point }}"
+        state: "directory"
+      with_items: "{{ fss_mount }}"
+
+    - name: Sleep for 15 Seconds
+      ansible.builtin.wait_for:
+        timeout: 15
+
+    - name: Mounting fss filesystem on orchestration server
+      delegate_to: "localhost"
+      when: fss_mount is defined
+      shell: "mount -t nfs {{ item.mount_target }}:{{item.fss_name}} {{ item.mount_point }}"
+      with_items: "{{ fss_mount }}"
+      register: fss_mount_status
+
+    - name: Unarchive and unzip fss backup to FSS mount point
+      delegate_to: "localhost"
+      when: fss_mount is defined
+      command: '/bin/partar pxzf "{{ fss_mount_point }}/{{ item.fss_backup }}" -C "{{ item.mount_point }}"'
+      with_items: "{{ fss_mount }}"
+      register: fss_restore
+
+
+    - name: Unmounting fss filesystem on orchestration server
+      delegate_to: "localhost"
+      when: fss_mount is defined
+      command: "umount {{ item.mount_point }}"
+      args:
+        warn: "false"
+      with_items: "{{ fss_mount }}"
+      register: fss_umount_status
+
+  rescue:
+    - name: Unmounting fss filesystem on orchestration server
+      delegate_to: "localhost"
+      when: fss_mount is defined
+      command: "umount {{ item.mount_point }}"
+      args:
+        warn: "false"
+      with_items: "{{ fss_mount }}"
+      register: fss_umount_status
+
+    - name: FSS Restore failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: {{ restore_env }} FSS Restore failed"
+        body: "FSS Restore failed  from host {{ ansible_hostname }} as on date: {{ ansible_date_time.date }}"

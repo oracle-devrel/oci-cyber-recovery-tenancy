@@ -1,0 +1,170 @@
+---
+# tasks file for oci-restore-blockvolume
+- name: Restoring block volume
+  block:
+    - set_fact:
+        par_expiry_date: "{{ '%Y-%m-%d' | strftime( ( ansible_date_time.epoch | int ) + ( 86400 * 1 )  ) }}"
+
+    - set_fact:
+        par_expiry_time: "{{ ansible_date_time.time }}"
+
+    - name: Create preauthenticated_request
+      delegate_to: 'localhost'
+      when: > 
+        disk_lv is defined and
+        staging_mount is defined
+      oci_object_storage_preauthenticated_request:
+        auth_type: "instance_principal"
+        name: "Restore_PAR_bv_{{ inventory_hostname }}_{{ ansible_date_time.date }}"
+        access_type: 'AnyObjectRead'
+        time_expires: '{{ par_expiry_date }}T{{ par_expiry_time }}Z'
+        namespace_name: '{{ namespace_name }}'
+        bucket_name: '{{ bucket_name }}'
+      register: par_result_bv
+
+    - set_fact:
+        par_url: 'https://objectstorage.{{region}}.oraclecloud.com{{par_result_bv.preauthenticated_request.access_uri}}'
+
+    - name: mount staging mount point in target server
+      when: >
+        disk_lv is defined and
+        staging_mount is defined
+      mount:
+        path: "{{ staging_mount.mount_path }}"
+        src: "{{ staging_mount.mount_target }}:{{staging_mount.fss_name}}"
+        fstype: "nfs"
+        opts: "auto,nodev,_netdev,rw,bg,hard,nolock,nointr,rsize=65536,wsize=65536,tcp,nfsvers=3,timeo=600,actimeo=600"
+        state: "mounted"
+
+# Download block volume backup to Orachestration Server
+    - name: Download tar/zip block volume backup from bucket
+      when: > 
+        item.backup_name != "" and
+        disk_lv is defined and
+        staging_mount is defined
+      delegate_to: "localhost"
+      ansible.builtin.get_url:
+        url: "{{ par_url }}{{ item.backup_name }}"
+        dest: "{{ local_backup_location }}/{{ item.backup_name }}"
+      with_items: "{{ disk_lv }}"
+      register: bv_download
+
+    - name: Delete preauthenticated_request
+      delegate_to: 'localhost'
+      oci_object_storage_preauthenticated_request:
+        auth_type: "instance_principal"
+        namespace_name: "{{ namespace_name }}"
+        bucket_name: "{{ bucket_name }}"
+        par_id: "{{ par_result_bv.preauthenticated_request.id }}"
+        state: "absent"
+
+    - name: Stop service oswatcher, if started
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: "stopped"
+      with_items:
+        - "oswatcher"
+        - "sysstat-collect.timer"
+        - "sysstat-collect"
+        - "sysstat-summary"
+
+    - name: Removing sysstat file
+      file:
+        path: "/var/log/sa"
+        state: "absent"
+      register: sysstat_result
+
+#    - name: Creating Staging mount point on target server
+#      when: staging_mount is defined
+#      file:
+#        path: "{{ staging_mount.mount_path }}"
+#        state: "directory"
+#      register: staging_mountpoint_status
+
+#    - name: Mounting staging mount point in target server
+#      when: staging_mount is defined
+#      command: "mount -t nfs {{ staging_mount.mount_target }}:{{staging_mount.fss_name}} {{ staging_mount.mount_path }}"
+#      with_items: "{{ staging_mount }}"
+#      register: staging_mount_status
+
+    - name: Untar and unzip block volume on target server
+      when: > 
+        item.backup_name != "" and
+        disk_lv is defined and
+        staging_mount is defined
+      command: "tar --exclude='lock' --exclude='cache' --exclude='lib/nfs/rpc_pipefs' --exclude='run' -pzxvf {{ staging_mount.mount_path }}/{{ item.backup_name }} -C {{ item.mount_path }}"
+#      args:
+#        chdir: "{{ item.mount_path }}"
+      with_items: "{{ disk_lv }}"
+      register: restore_result
+
+#    - name: Unmounting staging mount point on target server
+#      when: staging_mount is defined
+#      command: "umount {{ staging_mount.mount_path }}"
+#      register: staging_umount_status
+
+#    - name: Removing staging mount point from target server
+#      when: staging_mount is defined
+#      file:
+#        path: "{{ staging_mount.mount_path }}"
+#        state: "absent"
+#      register: staging_mountpoint_cleanup_status
+
+    - name: umount staging mp
+      mount:
+        path: "{{ staging_mount.mount_path }}"
+        src: "{{ staging_mount.mount_target }}:{{staging_mount.fss_name}}"
+        fstype: "nfs"
+        opts: "auto,nodev,_netdev,rw,bg,hard,nolock,nointr,rsize=65536,wsize=65536,tcp,nfsvers=3,timeo=600,actimeo=600"
+        state: "absent"
+
+    - name: Start service oswatcher, if started
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: "started"
+      with_items:
+        - "rsyslog"
+#        - "oswatcher"
+        - "sysstat-collect.timer"
+        - "sysstat-collect"
+        - "sysstat-summary"
+
+    - name: cleanup block volume backup from local temp area
+      delegate_to: "localhost"
+      when: >
+        disk_lv is defined and 
+        item.backup_name != ""
+      ansible.builtin.file:
+        path: "{{ local_backup_location }}/{{ item.backup_name }}"
+        state: "absent"
+      with_items: "{{ disk_lv }}"
+      register: temp_cleanup 
+
+  rescue:
+    - name: Delete preauthenticated_request
+      delegate_to: 'localhost'
+      oci_object_storage_preauthenticated_request:
+        auth_type: "instance_principal"
+        namespace_name: "{{ namespace_name }}"
+        bucket_name: "{{ bucket_name }}"
+        par_id: "{{ par_result_bv.preauthenticated_request.id }}"
+        state: "absent"
+
+    - name: cleanup block volume backup from local temp area
+      delegate_to: "localhost"
+      when: >
+        disk_lv is defined and
+        item.backup_name != ""
+      ansible.builtin.file:
+        path: "{{ local_backup_location }}/{{ item.backup_name }}"
+        state: "absent"
+      with_items: "{{ disk_lv }}"
+      register: temp_cleanup
+
+    - name: Generating alert for Block Volume restore failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: {{ restore_env }} Block Volume restore for host {{ ansible_hostname }}"
+        body: "Block Volume restore failed  for host {{ ansible_hostname }} as on date: {{ ansible_date_time.date }}"

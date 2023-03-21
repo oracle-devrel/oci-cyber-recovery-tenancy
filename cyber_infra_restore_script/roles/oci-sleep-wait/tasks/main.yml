@@ -1,0 +1,5 @@
+---
+# tasks file for oci-sleep-wait
+- name: Sleep for 300 Seconds till servers are booted
+  ansible.builtin.wait_for:
+    timeout: 300

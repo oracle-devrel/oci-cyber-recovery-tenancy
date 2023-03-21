@@ -1,0 +1,8 @@
+---
+validate_files:
+  - hostname: 'webserver3'
+    file_name: 
+      - "{{ role_path }}/files/var_validate.txt"
+      - "{{ role_path }}/files/app_validate.txt"
+      
+  
