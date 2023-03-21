@@ -1,0 +1,92 @@
+---
+# tasks file for oci-disk-mgmt
+- name: Creating Partition and LVM on Block volume
+  block:
+    - name: 'Create Partition on disk'
+      when: disk_part is defined
+      parted:
+        align: 'optimal'
+        device: "/dev/{{item}}"
+        label: 'gpt'
+        number: '1'
+        state: 'present'
+        part_start: "0%"
+        part_end: "100%"
+      with_items: "{{ disk_part }}"
+
+    - name: 'Create a volume group on top of with physical extent'
+      when: >
+        disk_vg is defined and
+        disk_part is defined
+      lvg:
+        vg: "{{ item.vg_name }}"
+        pvs: "/dev/{{ item.device }}"
+      with_items: "{{ disk_vg }}"
+
+    - name: 'Create a logical volume'
+      when: >
+        disk_lv is defined and
+        disk_vg is defined and
+        disk_part is defined
+      lvol:
+        vg: '{{ item.vg_name }}'
+        lv: '{{ item.lv_name }}'
+        size: '{{ item.size }}'
+      with_items: '{{ disk_lv }}'
+    
+    - name: 'Creating filesystem'
+      when: >
+        disk_lv is defined and
+        disk_vg is defined and
+        disk_part is defined
+      filesystem:
+        fstype: '{{item.mount_fs}}'
+        dev: '/dev/{{item.vg_name}}/{{item.lv_name}}'
+      with_items: '{{ disk_lv }}'
+
+#    - name: 'Mount up device filesystem'
+#      when: >
+#        disk_lv is defined and
+#        disk_vg is defined
+#      mount:
+#        path: '{{ item.mount_path }}'
+#        src: '/dev/{{ item.vg_name }}/{{item.lv_name}}'
+#        fstype: '{{item.mount_fs}}'
+#        state: 'present'
+#      with_items: '{{ disk_lv }}'
+
+#    - name: Uncommenting /var mountpoint from /etc/fstab
+#      lineinfile:
+#        path: '/etc/fstab'
+#        regexp: '^#(.*var.*)'
+#        line: '\1'
+#        backrefs: 'yes'
+#        state: 'present'
+#        backup: 'true'
+#      register: var_fix
+
+    - name: Uncommenting /var mountpoint from /etc/fstab
+      replace:
+        path: "/etc/fstab"
+        regexp: '^(#)(.*\/var.*)'
+        replace: '\2'
+        backup: 'yes'
+      register: var_fix
+
+    - name: Reboot host and wait for it to restart
+      reboot:
+        msg: "Reboot initiated by Ansible"
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: whoami
+  rescue:
+    - name: Disk Managment failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: {{ restore_env }} Disk Management failed for host {{ ansible_hostname }}"
+        body: "Disk Management failed for host {{ ansible_hostname }} as on date: {{ ansible_date_time.date }}"
+

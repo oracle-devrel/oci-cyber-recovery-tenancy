@@ -1,0 +1,43 @@
+---
+# tasks file for oci-clamavdb-update
+- name: Checking daily.cld present in backup
+  ansible.builtin.find:
+    paths: "{{ fss_mount_point }}"
+    patterns: "daily.cvd.{{ ansible_date_timee.date }}"
+#    patterns: "daily.cvd.2022-10-25"
+  register: "daily_find_result"
+
+
+- debug:
+    msg: "{{ daily_find_result.matched }}"
+
+- name: Update latest clamav virus db files from backup
+  delegate_to: 'localhost'
+  when: daily_find_result.matched|int == 1
+  copy:
+    src: "{{ fuse_mount_point }}/daily.cvd.{{ ansible_date_timee.date }}"
+#    src: "{{ fuse_mount_point }}/daily.cvd.2022-10-25"
+    dest: "/var/lib/clamav/daily.cvd"
+    owner: "clamupdate"
+    group: "clamupdate"
+    mode: "0644"
+  register: daily_copy_status
+
+- name: Checking daily.cld present in backup
+  ansible.builtin.find:
+    paths: "{{ fss_mount_point }}"
+    patterns: "main.cvd.{{ ansible_date_timee.date }}"
+#    patterns: "main.cvd.2022-10-25"
+  register: "main_find_result"
+
+- name: Update latest clamav virus db files from backup
+  delegate_to: 'localhost'
+  when: main_find_result.matched|int == 1
+  copy:
+    src: "{{ fuse_mount_point }}/main.cvd.{{ ansible_date_timee.date }}"
+#    src: "{{ fuse_mount_point }}/main.cvd.2022-10-25"
+    dest: "/var/lib/clamav/main.cvd"
+    owner: "clamupdate"
+    group: "clamupdate"
+    mode: "0644"
+  register: main_copy_status
