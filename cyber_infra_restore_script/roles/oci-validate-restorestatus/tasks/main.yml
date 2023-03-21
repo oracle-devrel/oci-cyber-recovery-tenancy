@@ -1,0 +1,11 @@
+---
+# tasks file for oci-validate-bvrestore
+  - name: Reading file not found in restore
+    delegate_to: "localhost"
+    shell: "cat /tmp/validate_result"
+    register: "FileNotFound"
+
+  - name: Printing list
+    when: FileNotFound.stdout_lines|length > 0
+    debug:
+      msg: "{{ FileNotFound.stdout_lines }}"

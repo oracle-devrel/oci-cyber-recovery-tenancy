@@ -1,0 +1,56 @@
+---
+- name: Validating Digital Signature for backup volumes
+  block:
+    - name: Recursively find oss for catalog
+      ansible.builtin.find:
+        paths: "{{ fss_mount_point }}"
+#        age: "-1d"
+        patterns: "*{{ ansible_date_timee.date }}*"
+        excludes: "*.sha256"
+      register: "backup_list"
+
+    - debug:
+        msg: "{{ item.path|basename }}"
+      with_items: "{{ backup_list.files }}"
+
+
+    - name: Verify digital signature for volume
+      when: topic_ocid is defined
+      command: >
+        openssl
+        dgst
+        -sha256
+        -verify "{{ public_key }}"
+        -signature "{{ item.path }}.sha256"
+        "{{ item.path }}"
+      register: verify_cert
+      with_items: "{{ backup_list.files }}"
+      failed_when: "'Verification Failure' in verify_cert.stdout"
+#        ( verify_cert.rc|int == 1 )
+
+    - debug:
+        msg: "{{ verify_cert }}"
+  
+  rescue:
+    - name: Generating Alert for volume Digital Signature Verification failure
+      when: item.stdout == 'Verification Failure'
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Volume Digital Signature Validation for {{ item.item.path|basename }}"
+        body: "Volume Digital Signature Validation failed for file {{ item.item.path|basename }} as on date: {{ ansible_date_time.date }}"
+      with_items: "{{ verify_cert.results }}"
+
+    - name: Generating Alert for volume Error in Digital Signature Verification
+      when: item.rc|int == 1
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "ERROR: Volume Digital Signature Validation for {{ item.item.path|basename }}"
+        body: "Volume Digital Signature Validation failed for file {{ item.item.path|basename }} error: {{ item.stderr }} as on date: {{ ansible_date_time.date }}"
+      with_items: "{{ verify_cert.results }}"
+
+    - name: Aborting playbook due to Boot Digital Signature failure
+      meta: "end_play"

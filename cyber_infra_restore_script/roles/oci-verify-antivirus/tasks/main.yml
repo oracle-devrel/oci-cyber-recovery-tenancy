@@ -1,0 +1,42 @@
+---
+- name: Validating AntiVirus Scan for backup volumes
+  block:
+    - name: Recursively find oss for catalog
+      ansible.builtin.find:
+        paths: "{{ fss_mount_point }}"
+#        age: "-1d"
+        patterns: "*{{ ansible_date_timee.date }}*"
+#        excludes: "*.sha256"
+      register: "backup_list"
+
+    - debug:
+        msg: "{{ item.path|basename }}"
+      with_items: "{{ backup_list.files }}"
+
+
+    - name: Running virus scan on backup volume
+      delegate_to: 'localhost'
+      when: >
+        topic_ocid is defined
+      shell: 'clamscan -ir "{{ item.path }}" | grep "Infected files" | tr -d " " |awk -F":" "{print $2 }"'
+      register: clamav_boot_status
+      with_items: "{{ backup_list.files }}"
+      failed_when: "'Infectedfiles:0' not in clamav_boot_status.stdout"
+
+    - debug:
+        msg: "{{ clamav_boot_status }}"
+
+  rescue:
+    - name: Generating Alert for Backup volume AntiVirus Verification failure
+      delegate_to: 'localhost'
+      when: >
+        item.stdout == 'Infectedfiles:1'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Infra Backup Anitvirus Validation for {{ item.item.path|basename }}"
+        body: "Infra Backup  Antivirus Validation failed for file {{ item.item.path|basename }} as on date: {{ ansible_date_time.date }}"
+      with_items: "{{ clamav_boot_status.results }}"
+
+    - name: Aborting playbook due to backup volume AnitiVirus failure
+      meta: "end_play"
