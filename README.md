@@ -6,9 +6,9 @@ Cyber recovery architecture has been designed for the purpose when ever there is
 
 
 
-## Deliverables
 
-Repository contains following deliverables:
+
+Repository contains following artifacts:
 
 - A reference implementation script written in ansible that takes backup in production tenancy.
 
@@ -18,23 +18,17 @@ Repository contains following deliverables:
 
 - A reference implementation script written in ansible to restore database in cyber tenancy after anti virus scan is successful.
 
-## Architecture
+## Solution Deployment Steps
 
 This reference architecture shows how you can implement an automated backup and restore solution that is deployed on OCI.
 
 Oracle E-Business Suite application (EBS) is used as an example for this solution but you can easily adopt it for other Oracle applications.
 
-##### Diagram
 
-The Diagram illustrates this reference architecture.
 
-![cyber_recovery_ref_arch](images/cyber_recovery_ref_arch.png)
-
-## Executing Instructions
-
-- [Production backup configuration](prodbackup.md)
-- [CRS Restore Configuration](crsrestore.md)
-- [Database Restore Configuration](dbrestore.md)
+- [Configure Production backup](prodbackup.md)
+- [Restore CRS Tenancy](crsrestore.md)
+- [Restore Database](dbrestore.md)
 
 
 
