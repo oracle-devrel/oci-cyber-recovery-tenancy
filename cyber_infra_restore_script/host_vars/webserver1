@@ -1,0 +1,51 @@
+---
+# Define FSS Share
+fss_mount:
+  - fss_name: "FSS mount point name where to restore"
+    mount_target: "FSS mount target name"
+    mount_point: "mount point path in orchestration VM"
+    fss_backup: "fss_backup_{{ ansible_date_timee.date }}.tar.gz"
+
+# Define Block Volume share
+disk_part:
+  - 'sdb'
+  - 'sdc'
+  - 'sdd'
+disk_vg:
+  - vg_name: 'vg_var'           #Size 100G
+    device: 'sdb1'
+  - vg_name: 'vgtmp'            #Size 50G
+    device: 'sdc1'
+  - vg_name: 'vgvar'		#Sie 100G
+    device: 'sdd1'		
+disk_lv:
+  - lv_name: 'lv_vg_var'
+    vg_name: 'vg_var'
+    mount_fs: "ext4"
+    size: "49G"
+    mount_path: '/var'
+    backup_name: 'var_{{inventory_hostname}}_{{ansible_date_timee.date }}.tar.gz'
+  - lv_name: 'lv_bvgp_varlog'
+    vg_name: 'vgvar'
+    mount_path: '/var/log'
+    mount_fs: "ext4"
+    size: "30G"
+    backup_name: 'varlog_{{inventory_hostname}}_{{ansible_date_timee.date }}.tar.gz'
+  - lv_name: 'lv_bvgp_varlogaud'
+    vg_name: 'vgvar'
+    mount_fs: "ext4"
+    size: "40G"
+    mount_path: '/var/log/audit'
+    backup_name: 'varlogadu_{{inventory_hostname}}_{{ansible_date_timee.date }}.tar.gz'
+  - lv_name: 'lv_bvgp_vartmp'
+    vg_name: 'vgvar'
+    mount_fs: "ext4"
+    size: "29G"
+    mount_path: '/var/tmp'
+    backup_name: 'vartmp_{{inventory_hostname}}_{{ansible_date_timee.date }}.tar.gz'
+  - lv_name: 'lv_bvgp_tmp'
+    vg_name: 'vgtmp'
+    mount_fs: "ext4"
+    size: "49G"
+    mount_path: '/tmp'
+    backup_name: '' 
