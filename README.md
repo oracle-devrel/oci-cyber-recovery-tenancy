@@ -28,7 +28,7 @@ Oracle E-Business Suite application (EBS) is used as an example for this solutio
 
 The Diagram illustrates this reference architecture.
 
-![cyber_recovery_ref_arch](images\cyber_recovery_ref_arch.png)
+![cyber_recovery_ref_arch](images/cyber_recovery_ref_arch.png)
 
 ## Executing Instructions
 
