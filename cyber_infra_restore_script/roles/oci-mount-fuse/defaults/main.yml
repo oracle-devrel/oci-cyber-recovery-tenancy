@@ -1,0 +1,13 @@
+---
+# defaults file for oci-fuse
+s3fs_fuse_version: "1.91"
+s3fs_fuse_region: "{{ region }}"
+s3fs_fuse_access_key_id: "{{ access_id }}"
+s3fs_fuse_secret_access_key: "{{ secret_id }}"
+s3fs_fuse_bucket: "{{ bucket_name }}"
+s3fs_fuse_mount_point: "{{ fss_mount_point }}"
+s3fs_fuse_mount_point_permissions: "0777"
+s3fs_fuse_url: "https://{{ namespace_name }}.compat.objectstorage.{{ s3fs_fuse_region }}.oraclecloud.com/"
+s3fs_fuse_option_flags:
+  - "nomultipart"
+  - "use_path_request_style"

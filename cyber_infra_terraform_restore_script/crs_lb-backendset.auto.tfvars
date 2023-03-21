@@ -9,7 +9,7 @@
 # terraform import "module.backend-sets[\"<<backend_sets terraform variable name>>\"].oci_load_balancer_backend_set.backend_set" loadBalancers/<<loadbalancer ocid>>/backendSets/<<backendset name>>
 #############################
 backend_sets = {
-  PRD_CON_MGR_LB_PRD_BASTION_SSH_BS = {
+  lb_backend = {
     name                              = "Name"
     load_balancer_id                  = "LB-Name"
     policy                            = "ROUND_ROBIN"

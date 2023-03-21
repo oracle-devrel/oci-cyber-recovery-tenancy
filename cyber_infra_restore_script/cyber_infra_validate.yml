@@ -1,0 +1,14 @@
+- name: Validating Restore
+  hosts: cyber_host
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-validate-restore
+
+- name: Validating Restore
+  hosts: localhost
+  connection: local
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-validate-restorestatus

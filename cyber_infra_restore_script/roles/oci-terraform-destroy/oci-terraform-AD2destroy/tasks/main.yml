@@ -1,0 +1,26 @@
+---
+- name: Terraform Destroy
+  block:
+    - name: destroy terraform script
+      delegate_to: "localhost"
+      shell: "terraform destroy -auto-approve"
+      args:
+        chdir: "{{ terraform_homedir_ad2 }}"
+      register: terra_destroy_result
+      failed_when: "'Destroy complete!' not in terra_destroy_result.stdout"
+
+    - name: output
+      debug:
+        msg: "{{ terra_destroy_result }}"
+
+  rescue:
+    - name: Generating Alert for Terraform Destroy failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: {{ restore_env }} Terraform destroy failed as on {{ ansible_date_time.date }}"
+        body: "Terraform destory failed as on date: {{ ansible_date_time.date }}"
+
+    - name: Aborting playbook due to backup volume AnitiVirus failure
+      meta: "end_play"

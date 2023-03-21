@@ -1,0 +1,38 @@
+---
+- name: Mounting s3fs mount point and copy SSL LB Cert
+  connection: local
+  hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-pull-backup
+    - role: oci-mount-fuse
+    - role: oci-clamavdb-update
+    - role: oci-verify-digitalsignature
+    - role: oci-verify-antivirus
+    
+- name: Importing custom image
+  connection: local
+  hosts: cyber_host
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-import-customimage
+
+- name: Restoring instance from custom image
+  connection: local
+  hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-terraform-deploy
+    - role: oci-sleep-wait
+
+- name: Creating disk partition, LVM, filesystem and Restoring blockvolume
+  hosts: cyber_host
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-disk-mgmt
+    - role: oci-restore-blockvolume
+    - role: oci-restore-fss

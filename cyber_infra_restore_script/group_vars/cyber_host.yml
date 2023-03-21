@@ -1,0 +1,32 @@
+---
+##Storage bucket parameters
+region: "region"
+bucket_name: "cyber-recovery-bucket"
+namespace_name: "namespace"
+fss_mount_point: "fss_directory"
+
+#Destination compartment OCID
+dest_compartment_ocid: "ocid1.compartment.oc1..compartment_ocid_to_restore_bucket"
+
+##Notification parameters
+topic_ocid: "ocid1.onstopic.oc1.topic_ocid"
+
+## Temporary Backup Store Area
+local_backup_location: "temporary_backup_storage_area_on_orchestration_vm"
+
+#temporary variable for script to pick specific date backup
+ansible_date_timee:
+  date: '2023-01-20'
+
+#If script to pick daily backup
+ansible_date_timee:
+  date: "{{ ansible_date_time.date}}"
+
+#Env Variable
+restore_env: 'Red Room'
+
+## Staging FSS Detail
+staging_mount:
+  mount_target: "fss_mount_target_ip"
+  fss_name: "fss_name"
+  mount_path: "fss_mount_point_path"

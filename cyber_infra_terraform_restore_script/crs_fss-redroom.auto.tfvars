@@ -1,19 +1,19 @@
 fss_blueroom = {
-  PRD_IAO11P_122_APPS-3 = {
+  fss1 = {
     availability_domain = "2"
     compartment_id      = "Compartment-Name"
     #Optional
-    display_name         = "PRD_IAO11P_122_APPS-3"
+    display_name         = "fss1"
     kms_key_name         = ""
     source_snapshot_name = ""
     defined_tags         = {}
     freeform_tags        = {}
   },
-  PRD_IAO11P_122_APPS-2 = {
+  fss2 = {
     availability_domain = "2"
     compartment_id      = "Compartment-Name"
     #Optional
-    display_name         = "PRD_IAO11P_122_APPS-2"
+    display_name         = "fss2"
     kms_key_name         = ""
     source_snapshot_name = ""
     defined_tags         = {}
@@ -29,13 +29,13 @@ fss_blueroom = {
 # Example : compartment_id = "ocid1.compartment.oc1..aaaaaaaahwwiefb56epvdlzfic6ah6jy3xf3c" or compartment_id = "Network-root-cpt--Network" where "Network-root-cpt" is the parent of "Network" compartment
 ############################
 nfs_export_options_blueroom = {
-  FSE-PRD_AMBER_MT-PRD_IAO11P_122_APPS-3-export-IAO11P-APPS_122-3 = {
-    export_set_id  = "PRD_AMBER_MT"
-    file_system_id = "PRD_IAO11P_122_APPS-3"
-    path           = "/export/IAO11P-APPS_122-3"
+  fss1_export_1 = {
+    export_set_id  = "crs_fss_export"
+    file_system_id = "fss1"
+    path           = "/export/fss1"
     export_options = [{
       #Required
-      source = "10.166.125.34/31"
+      source = "x.x.x.x/31"
       #Optional
       access                         = "READ_WRITE"
       anonymous_gid                  = "65534"
@@ -44,7 +44,7 @@ nfs_export_options_blueroom = {
       require_privileged_source_port = "false"
       }, {
       #Required
-      source = "10.129.218.0/28"
+      source = "x.x.x.x/28"
       #Optional
       access                         = "READ_WRITE"
       anonymous_gid                  = "65534"
@@ -55,13 +55,13 @@ nfs_export_options_blueroom = {
     defined_tags  = {}
     freeform_tags = {}
   },
-  FSE-PRD_AMBER_MT-PRD_IAO11P_122_APPS-2-export-IAO11P-APPS_122-2 = {
-    export_set_id  = "PRD_AMBER_MT"
-    file_system_id = "PRD_IAO11P_122_APPS-2"
-    path           = "/export/IAO11P-APPS_122-2"
+  fss2_export_2 = {
+    export_set_id  = "crs_fss_export"
+    file_system_id = "fss2"
+    path           = "/export/fss2"
     export_options = [{
       #Required
-      source = "10.166.125.34/31"
+      source = "x.x.x.x/31"
       #Optional
       access                         = "READ_WRITE"
       anonymous_gid                  = "65534"
@@ -70,7 +70,7 @@ nfs_export_options_blueroom = {
       require_privileged_source_port = "false"
       }, {
       #Required
-      source = "10.129.218.0/28"
+      source = "x.x.x.x/28"
       #Optional
       access                         = "READ_WRITE"
       anonymous_gid                  = "65534"

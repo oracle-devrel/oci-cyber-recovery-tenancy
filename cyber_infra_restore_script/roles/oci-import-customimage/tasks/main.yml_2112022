@@ -1,0 +1,94 @@
+---
+- name: Importing custom image
+  block:
+#    - name: Setting boot volume object path
+#      ansible.builtin.set_fact:
+#        object_bootvolume_path: "{{ fss_mount_point}}/{{ inventory_hostname }}_image_{{ ansible_date_timee.date }}"
+
+    - name: Recursively find oss for catalog
+      ansible.builtin.find:
+        paths: "{{ fss_mount_point }}"
+        patterns: "{{ inventory_hostname }}_image_{{ ansible_date_timee.date }}"
+      register: "boot_find_result"
+
+#    - name: find result
+#      debug:
+#        msg: "{{ boot_find_result.matched }} {{ boot_find_result.files[0].path }}"
+    
+#    - name: Check if boot volume copied to bucket
+#      stat:
+#        path: "{{ object_bootvolume_path }}"
+#      register: object_state
+
+    - name: Collecting custom image facts
+      delegate_to: 'localhost'
+      when: boot_find_result.matched|int == 1 
+      oci_compute_image_facts:
+        auth_type: "instance_principal"
+        compartment_id: "{{ dest_compartment_ocid }}"
+        display_name: "{{ inventory_hostname }}"
+      register: image_facts
+
+    - name: Deleting old custom image
+      delegate_to: 'localhost'
+      when: > 
+        image_facts.images[0].id is defined and
+        boot_find_result.matched|int == 1 and
+        "verify_cert.stdout_lines[0] == 'Verified OK'"
+      oci_compute_image:
+        auth_type: "instance_principal"
+        compartment_id: "{{ dest_compartment_ocid }}"
+        image_id: "{{ image_facts.images[0].id }}"
+        state: "absent"
+      register: image_cleanup_status
+
+    - name: Get a specific object
+      delegate_to: 'localhost'
+      when: boot_find_result.matched|int == 1
+      oci_object_storage_object_facts:
+        auth_type: "instance_principal"
+        object_name: "{{ inventory_hostname }}_image_{{ ansible_date_timee.date }}"
+        namespace_name: "{{ namespace_name }}"
+        bucket_name: "{{ bucket_name }}"
+      register: object_facts
+
+    - name: Create image
+      delegate_to: 'localhost'
+      when: boot_find_result.matched|int == 1
+#        "verify_cert.stdout_lines[0] == 'Verified OK'" and
+#         object_state.stat.exists
+      oci_compute_image:
+        auth_type: "instance_principal"
+        compartment_id: "{{ dest_compartment_ocid }}"
+        launch_mode: "NATIVE"
+        display_name: "{{ inventory_hostname }}"
+        image_source_details:
+          bucket_name: "{{ bucket_name }}"
+          namespace_name: "{{ namespace_name }}"
+          object_name: "{{ inventory_hostname }}_image_{{ ansible_date_timee.date }}"
+          source_type: "objectStorageTuple"
+        wait_timeout: "1800"
+      register: image_create_status
+      until: "image_create_status is not failed"
+      retries: "600"
+      delay: "10"
+
+#    - name: Updating log file with Custom Image status
+#      delegate_to: "localhost"
+#      shell: 'echo "PASS" > {{ err_logs }}/{{ item }}_{{ ansible_date_time.date }}.log'
+#      with_items:
+#        - "infra_image"
+  
+  rescue:
+#    - name: Updating log file with custom image status
+#      delegate_to: "localhost"
+#      shell: 'echo "FAIL" > {{ err_logs }}/{{ item }}_{{ ansible_date_time.date }}.log'
+#      with_items:
+#        - "infra_image"
+
+    - name: Generating Alert for custom image import failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Custom Image import {{ inventory_hostname }}"
+        body: "Custom image import failed for host {{ inventory_hostname }} as on date: {{ ansible_date_timee.date }}"

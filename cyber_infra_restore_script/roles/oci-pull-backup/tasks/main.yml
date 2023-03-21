@@ -1,0 +1,46 @@
+---
+- name: rclone Source and distination bucket
+  block:
+    - name: Printing date
+      debug:
+        msg: "{{ ansible_date_timee.date }}"
+
+    - name: Syncing Source bucket {{ source_bucket }} with Destination bucket {{ destination_bucket }}
+      command: >
+        rclone
+        --max-age 5d
+        sync
+        "{{ rclone_local }}:{{ source_bucket }}"
+        "{{ rclone_remote }}:{{ destination_bucket }}"
+        --filter-from="{{ role_path }}"/files/rclone_infra_filter
+      register: rclone_status
+      environment:
+        RCLONE_CONFIG_PASS: "{{ rclone_secret }}"
+      failed_when: 
+        - '"RetentionRuleViolation" not in rclone_status.stderr'
+        - '"status code: 403" not in rclone_status.stderr'
+        - '"ERROR" not in rclone_status.stderr'
+        - 'rclone_status.rc|int != 0'
+
+#    - name: Copying Source bucket {{ source_bucket }} with Destination bucket {{ destination_bucket }}
+#      command: >
+#        rclone
+#        --max-age 24h
+#        copy
+#        "{{ rclone_local }}:{{ source_bucket }}"
+#        "{{ rclone_remote }}:{{ destination_bucket }}"
+#        --filter-from="{{ role_path }}"/files/rclone_infra_filter
+
+
+  rescue:
+    - name: Infra backup Rclone failed
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: Infra backup Rclone sync from {{ rclone_local }}:{{ source_bucket }} to {{ rclone_remote }}:{{ destination_bucket }}"
+        body: "Infra backup Rclone sync failed from {{ rclone_local }}:{{ source_bucket }} to {{ rclone_remote }}:{{ destination_bucket }} as on date: {{ ansible_date_time.date }}"
+
+
+    - name: Aborting playbook due to DB Rclone sync failure
+      meta: "end_play"
