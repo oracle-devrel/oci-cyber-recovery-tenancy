@@ -1,0 +1,13 @@
+# Include rules for Infra rclone filter
++ *.tar.gz
++ *.sha256
++ *_image_*
++ daily.cvd.*
++ main.cvd.*
++ dns_records_*
++ lb_tf_*
++ *.pem
++ *.zip
+
+# exclude everything else
+- *

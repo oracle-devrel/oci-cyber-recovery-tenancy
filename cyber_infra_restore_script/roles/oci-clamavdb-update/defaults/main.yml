@@ -1,0 +1,3 @@
+---
+# defaults file for oci-clamavdb-update
+fuse_mount_point: "{{ fss_mount_point }}"

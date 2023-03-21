@@ -1,0 +1,42 @@
+---
+- name: Mounting S3FS on Orch Server
+  block:
+    - name: copy OCI credentail to passwd-s3fs file
+      template:
+        src="passwd-s3fs.j2"
+        dest="{{ansible_facts['env']['HOME']}}/.passwd-s3fs"
+        owner="root"
+        group="root"
+        mode=0600
+
+    - name: See if {{ s3fs_fuse_mount_point }} Is Already Mounted
+      command: mount
+      register: mount_list
+
+    - name: mount folder {{ s3fs_fuse_mount_point }} to s3 bucket {{ s3fs_fuse_bucket }} using s3fs
+      command: >
+        s3fs
+        -o endpoint={{ s3fs_fuse_region }}
+        -o passwd_file="{{ansible_facts['env']['HOME']}}/.passwd-s3fs"	
+        -o url={{ s3fs_fuse_url }}
+        {% for option in s3fs_fuse_option_flags %}
+        -o {{ option }}
+        {% endfor %}
+        {{ s3fs_fuse_bucket }} {{ s3fs_fuse_mount_point }}
+      register: command_result
+      failed_when: >
+        'according to mtab, s3fs is already mounted' not in command_result.stderr and command_result.rc == 1
+      when: s3fs_fuse_mount_point not in mount_list.stdout
+
+  
+  rescue:
+    - name: Mounting s3fs object storage failed on orch server
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        topic_id: "{{ topic_ocid }}"
+        auth_type: "instance_principal"
+        title: "FAILED: {{ restore_env }} S3FS object storage Mount on Orchestration Server"
+        body: "S3FS object storage Mount failed on host Orachestration Server as on date: {{ ansible_date_time.date }}"
+
+    - name: Aborting playbook due to DB Rclone sync failure
+      meta: "end_play"
