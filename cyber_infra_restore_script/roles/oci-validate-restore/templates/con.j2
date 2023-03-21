@@ -1,0 +1,5 @@
+{% for i in this_filename %}
+{% if this_hostname == inventory_hostname %}
+{{ lookup('file', i) }}
+{% endif %}
+{% endfor %}

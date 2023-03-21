@@ -1,0 +1,106 @@
+---
+# tasks file for oci-validate-fssrestore
+- name: Validate fss mounts
+  block:
+    - name: Include file
+ #     when: item is defined
+      include_vars: '{{ item }}'
+      with_first_found:
+        - 'main.yml'
+
+    - name: Finding current hostname
+      when: item.hostname == ansible_hostname
+      set_fact:
+        this_hostname: "{{ item.hostname }}"
+      with_items: "{{ validate_files }}"
+
+
+    - name: Finding list of files
+      when: >
+        item.hostname == ansible_hostname and
+        this_hostname is defined
+      set_fact:
+        this_filename: "{{ item.file_name }}"
+      with_items: "{{ validate_files }}"
+
+    - name: file list
+      when: >
+        this_filename is defined
+      debug:
+        msg: "{{ item }}"
+      with_items: "{{ this_filename }}"
+    
+    - name: creating temp file
+      delegate_to: 'localhost'
+      when: >
+        this_hostname == ansible_hostname and
+        this_hostname is defined
+      ansible.builtin.tempfile:
+        state: file
+      register: temp_path
+
+    - debug:
+        msg: "{{ temp_path }}"
+
+    - name: Merging the list of files
+      delegate_to: 'localhost'
+      when: >
+        this_hostname == ansible_hostname and
+        this_hostname is defined
+      ansible.builtin.template:
+        src: "templates/con.j2"
+        dest: "{{ temp_path.path }}"
+
+    - name: Read file shell
+      when: >
+        this_hostname is defined and
+        this_hostname == ansible_hostname and
+        this_filename is defined
+      delegate_to: 'localhost'
+      shell: "cat {{ temp_path.path }}"
+      register: host_file_list
+
+    - name: Read file
+      when: item is defined
+      debug:
+        msg: "{{ item }}"
+      with_items: "{{ host_file_list.stdout_lines }}"
+
+    - name: Removing tempfile
+      when: temp_path.path is defined
+      delegate_to: 'localhost'
+      file:
+        path: "{{ temp_path.path }}"
+        state: "absent"
+
+    - name: Mounting filesystem if not mounted
+      command: "mount -a"
+      ignore_errors: "yes"
+
+    - name: validating file present on host
+      when: >
+        host_file_list is defined and
+        this_hostname == ansible_hostname and
+        this_hostname is defined
+      stat:
+        path: "{{ item }}"
+      with_items: "{{ host_file_list.stdout_lines }}"
+      register: file_status
+
+    - name: Creating temp file for validate result
+      file:
+        path: "/tmp/validate_result"
+        state: touch
+
+    - name: Cleanup tempfile
+      delegate_to: "localhost"
+      shell: ">/tmp/validate_result"
+
+    - name: Updating a file
+      delegate_to: "localhost"
+      when: >
+        item.stat.exists == false and
+        this_hostname is defined and
+        item is defined
+      shell: "echo {{ inventory_hostname }}: {{ item.invocation.module_args.path }} >> /tmp/validate_result"
+      with_items: "{{ file_status.results }}"

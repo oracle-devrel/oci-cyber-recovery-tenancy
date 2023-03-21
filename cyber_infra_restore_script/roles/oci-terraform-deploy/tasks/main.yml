@@ -1,0 +1,35 @@
+---
+- name: Terraform Apply
+  block:
+    - name: init terraform
+      delegate_to: "localhost"
+      shell: "source {{ terraform_homedir }}/TF_source.sh && terraform init"
+      args:
+        chdir: "{{ terraform_homedir }}"
+      register: terra_init_result
+
+    - name: apply terraform script
+      delegate_to: "localhost"
+      terraform:
+        project_path: "{{ terraform_homedir }}"
+        state: "present"
+      register: terra_apply_result
+      failed_when:
+        - "'Apply complete!' not in terra_apply_result.stdout"
+        - "'No changes.' not in terra_apply_result.stdout" 
+
+    - name: output
+      debug:
+        msg: "{{ terra_apply_result }}"
+
+  rescue:
+    - name: Generating Alert for Terraform apply failure
+      delegate_to: 'localhost'
+      oci_ons_publish_result:
+        auth_type: "instance_principal"
+        topic_id: "{{ topic_ocid }}"
+        title: "FAILED: terraform apply failed as on {{ ansible_date_time.date }}"
+        body: "terraform apply failed as on date: {{ ansible_date_time.date }}"
+
+    - name: Aborting playbook due to backup volume AnitiVirus failure
+      meta: "end_play"
