@@ -20,17 +20,14 @@ public_key: "./pubkey.pem"
 topic_ocid: "ocid1.onstopic.oc1.uk-london-1.topic_ocid"
 
 ## Terraform Parameter
-terraform_homedir_ad3: "path for terraform script located on orchestration VM for AD3"
-terraform_homedir_ad2: "path for terraform script located on orchestration VM for AD3"
+terraform_homedir: "path for terraform script located on orchestration VM for AD3"
 
 ##Rclone Secret
 rclone_secret: 'rclone encryption password'
 
-##LBAAS SSL Secret
-lbaas_secret: 'Load Balancer Password'
 
 #Env Variable
-restore_env: 'Red Room'
+restore_env: 'Env Name Prod/NonProd'
 
 #temporary variable if need to run on specific date
 ansible_date_timee:
