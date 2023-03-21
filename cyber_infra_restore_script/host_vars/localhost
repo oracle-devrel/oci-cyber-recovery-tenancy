@@ -1,0 +1,41 @@
+---
+#Object Storage Parameter
+region: "regopm"
+access_id: "customer secret key to generated from oci console for storage access"
+secret_id: "customer secret key to generated from oci console for storage access"
+fss_mount_point: "mount point path for object storage mount"
+namespace_name: "object storage namespace"
+bucket_name: "object storage bucket"
+
+# configuration for rclone
+rclone_local: "rclone production source name"
+source_bucket: "source production bucket name"
+rclone_remote: "rclone cyber destination name"
+destination_bucket: "cyber destination bucket name"
+
+#Digital Signature Verification
+public_key: "./pubkey.pem"
+
+## Notification Parameters
+topic_ocid: "ocid1.onstopic.oc1.uk-london-1.topic_ocid"
+
+## Terraform Parameter
+terraform_homedir_ad3: "path for terraform script located on orchestration VM for AD3"
+terraform_homedir_ad2: "path for terraform script located on orchestration VM for AD3"
+
+##Rclone Secret
+rclone_secret: 'rclone encryption password'
+
+##LBAAS SSL Secret
+lbaas_secret: 'Load Balancer Password'
+
+#Env Variable
+restore_env: 'Red Room'
+
+#temporary variable if need to run on specific date
+ansible_date_timee:
+  date: '2023-02-20'
+
+#temporary variable if need to run Daily
+ansible_date_timee:
+  date: "{{ ansible_date_time.date }}"

@@ -1,0 +1,16 @@
+---
+- name: Destroying AD2 infrastructure created by terraform
+  connection: local
+  hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-terraform-destroy
+
+- name: Destroying AD2 custom image created by Ansible
+  hosts: cyber_host
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: oci-cleanup-customimage
