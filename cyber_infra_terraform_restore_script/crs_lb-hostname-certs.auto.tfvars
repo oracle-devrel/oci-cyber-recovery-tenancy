@@ -1,7 +1,7 @@
 load_balancers = {
-  PRD_CON_MGR_LB = {
-    display_name   = "PRD_CON_MGR_LB"
-    compartment_id = "CRS--CRS_RecoveryRooms--CRS_APP_EBS--CRS_APP_RedRoom"
+  lb_1 = {
+    display_name   = "lb_1"
+    compartment_id = "compartment-name"
     shape          = "flexible"
     shape_details = [{
       #Required
@@ -33,10 +33,10 @@ certificates = {
   PRD_EBS_BACS_LB_asserter_ssl_cert_cert = {
     certificate_name   = "Certname"
     load_balancer_id   = "LB-Name"
-    ca_certificate     = "certs/asserter_lbaas_cert.pem"
+    ca_certificate     = "certs/cert.pem"
     passphrase         = ""
-    private_key        = "certs/lbaas_privatekey/asserter_private.pem"
-    public_certificate = "certs/asserter_lbaas_cert.pem"
+    private_key        = "certs/lbaas_privatekey/cert.pem"
+    public_certificate = "certs/cert.pem"
   },
   ##Add New Certificates for london here##
 }
