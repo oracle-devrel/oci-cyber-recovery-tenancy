@@ -33,7 +33,7 @@ Oracle E-Business Suite application (EBS) is used as an example for this solutio
 
 
 ## License
-Copyright (c) 2022 Oracle and/or its affiliates.
+Copyright (c) 2024 Oracle and/or its affiliates.
 
 Licensed under the Universal Permissive License (UPL), Version 1.0.
 
